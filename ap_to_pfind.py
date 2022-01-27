@@ -93,7 +93,7 @@ def ap_bruker_to_mgf(hdf):
                     f.write(f"{mass:.6f}\t{inten:.0f}\n")
                 f.write("END IONS\n")
     f.close()
-    with open(raw_file+'.csv','w') as f:
+    with open(raw_file+'.done','w') as f:
         f.write(f'Converted from {raw_file}.d by ap_to_pfind')
 
 if __name__ == '__main__':

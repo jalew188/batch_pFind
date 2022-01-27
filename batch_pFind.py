@@ -2,33 +2,62 @@ import os
 import sys
 import concurrent.futures as cf
 
-raw_folder = sys.argv[1]
-fasta = sys.argv[2]
+import argparse
 
-if len(sys.argv) > 3:
-    enzyme_aa = sys.argv[3]
-    enzyme_term = sys.argv[4]
-    enzyme_specific = sys.argv[5] #0: non-specific, 1 or 2: semi-specific, 3: specific
+parser = argparse.ArgumentParser(description='Run pFind in parallel for different raw files')
+
+parser.add_argument('--raw_folder', type=str, 
+    help='the folder contains raw files', required=True)
+parser.add_argument('--fasta', type=str,
+    help='fasta file to search', required=True)
+parser.add_argument('--pfind_bin_folder', type=str,
+    help='pfind bin folder which contains Searcher.exe ... ', required=True)
+parser.add_argument('--enzyme_aa', default="KR", type=str,
+    help='Digested amino acids. Default=KR', required=False)
+parser.add_argument('--enzyme_term', default="C", type=str,
+    help='Digested amino acids at N- or C-term. Default=C', required=False)
+parser.add_argument('--enzyme_specific', default=3, type=int,
+    help='Enzyme specificity: 0=non-specific; 1=N-term-specific; 2=C-term-specific; 3=fully-specific. Only apply for second round seaerch. Default=3', required=False)
+parser.add_argument('--contaminant', default=False, type=bool,
+    help='if include contaminant fasta. Default=False', required=False)
+parser.add_argument('--thermo_ppm', default=20, type=float,
+    help='ppm tolerance for Thermo data. Default=20', required=False)
+parser.add_argument('--bruker_ppm', default=30, type=float,
+    help='ppm tolerance for Bruker data. Default=30', required=False)
+parser.add_argument('--reduce_mods', default=True, type=bool,
+    help='Remove unnecessary modifications for search. Default=True', required=False)
+parser.add_argument('--processes', default=6, type=int,
+    help='number of processes for parallelization. Default=6', required=False)
+    
+args = parser.parse_args()
+    
+raw_folder = args.raw_folder
+fasta = args.fasta
+
+enzyme_aa = args.enzyme_aa
+enzyme_term = args.enzyme_term
+enzyme_specific = args.enzyme_specific
+
+pfind_bin_folder=args.pfind_bin_folder
+
+add_contaminant=args.contaminant
+
+thermo_ppm = args.thermo_ppm
+bruker_ppm = args.bruker_ppm
+
+if args.reduce_mods:
+    used_mod = os.path.abspath('./reduced_mod.ini')
 else:
-    enzyme_aa = 'KR'
-    enzyme_term = 'C'
-    enzyme_specific = 3
+    used_mod = os.path.join(pfind_bin_folder,'modification.ini')
 
-pfind_path=r'C:\pFindStudio\pFind3\bin'
-
-
-used_mod = os.path.abspath('./reduced_mod.ini')
-#used_mod = os.path.join(pfind_path,'modification.ini')
-
-n_process = 6
+n_process = args.processes
 
 
 pfind_main='Searcher.exe'
 pparse_main='pParse.exe'
 enzyme = f'Enzyme {enzyme_aa} _ {enzyme_term}'
 digest = enzyme_specific
-contaminant=os.path.join(pfind_path, 'contaminant.fasta')
-add_contaminant=False
+contaminant=os.path.join(pfind_bin_folder, 'contaminant.fasta')
 
 
 output_folder = os.path.join(raw_folder, 'pFind3')
@@ -45,7 +74,7 @@ if add_contaminant:
     fasta = out_fasta
     
     
-os.chdir(pfind_path)
+os.chdir(pfind_bin_folder)
 
 cfg_template = f'''
 # This is a standard pFind configure file
@@ -149,7 +178,7 @@ def parallel_run(params_list):
 folder_list = []
 params_list = []
 
-def generate_cfg_one_raw(raw_name, raw_file, ppm=20, fmt='pf2'):
+def generate_cfg_one_raw(raw_name, raw_file, ppm=thermo_ppm, fmt='pf2'):
     one_raw_out = os.path.join(output_folder, raw_name)
     folder_list.append(one_raw_out)
     if not os.path.isdir(one_raw_out):
@@ -169,7 +198,7 @@ def generate_cfg():
         elif raw_file.lower().endswith('.d'):
             print(raw_file)
             raw_name = raw_file[:-2]
-            generate_cfg_one_raw(raw_name, raw_file, ppm=20, fmt='mgf')
+            generate_cfg_one_raw(raw_name, raw_file, ppm=bruker_ppm, fmt='mgf')
 
     print(f'{len(folder_list)} raw files')
 
