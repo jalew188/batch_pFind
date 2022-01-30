@@ -155,7 +155,7 @@ log=LOG_INFO
 '''
 
 def run_pFind(pfind_cfg, raw_file):
-    if not os.path.isfile(os.path.splitext(raw_file)[0]+'_HCDFT.pf2') and not os.path.isfile(os.path.splitext(raw_file)[0]+'_HCDFT.mgf'):
+    if not os.path.isfile(os.path.splitext(raw_file)[0]+'.csv') and not os.path.isfile(os.path.splitext(raw_file)[0]+'.done'):
         if raw_file.lower().endswith('.raw'):
             os.system(f'{pparse_main} -D {raw_file}\n')
         elif raw_file.lower().endswith(".d"):
