@@ -32,15 +32,13 @@ def ap_bruker_to_mgf(hdf):
     mass_list = get_list('Raw/MS2_scans/mass_list_ms2')
     inten_list = get_list('Raw/MS2_scans/int_list_ms2')
     scan_list = get_list('Raw/MS2_scans/scan_list_ms2')
-    scan_sorted = np.argsort(scan_list)
-    scan_list = scan_list[scan_sorted]
-    rt_list = get_list('Raw/MS2_scans/rt_list_ms2')[scan_sorted]
-    mobility_list = get_list('Raw/MS2_scans/mobility2')[scan_sorted]
+    rt_list = get_list('Raw/MS2_scans/rt_list_ms2')
+    mobility_list = get_list('Raw/MS2_scans/mobility2')
     idx_list = get_list('Raw/MS2_scans/indices_ms2')
-    idx_start = idx_list[:-1][scan_sorted]
-    idx_end = idx_list[1:][scan_sorted]
-    precursor_list = get_list('Raw/MS2_scans/mono_mzs2')[scan_sorted]
-    charge_list = get_list('Raw/MS2_scans/charge2')[scan_sorted]
+    idx_start = idx_list[:-1]
+    idx_end = idx_list[1:]
+    precursor_list = get_list('Raw/MS2_scans/mono_mzs2')
+    charge_list = get_list('Raw/MS2_scans/charge2')
     
     print(f'{raw}.d contains {len(scan_list)} MS2 spectra')
 
@@ -54,9 +52,6 @@ def ap_bruker_to_mgf(hdf):
             continue
         masses = mass_list[start:end]
         intens = inten_list[start:end]
-        peaks = np.zeros(len(masses)*2)
-        peaks[np.arange(0,len(peaks),2)] = masses
-        peaks[np.arange(1,len(peaks),2)] = intens
         scan = scan_list[ms2_idx]
         if ms2_idx in ff_idx_set:
             spec_prec_mz_list = []
@@ -71,6 +66,9 @@ def ap_bruker_to_mgf(hdf):
             spec_charge_list = [int(charge_list[ms2_idx]) if not np.isnan(charge_list[ms2_idx]) else 2]
 
         if fmt == "pf2":
+            peaks = np.zeros(len(masses)*2)
+            peaks[np.arange(0,len(peaks),2)] = masses
+            peaks[np.arange(1,len(peaks),2)] = intens
             f.write(struct.pack('i', scan))
             f.write(struct.pack('i', len(masses)))
             f.write(struct.pack(f'{len(peaks)}d', *peaks))
@@ -83,7 +81,8 @@ def ap_bruker_to_mgf(hdf):
                 mz = spec_prec_mz_list[i]
                 charge = spec_charge_list[i]
                 f.write("BEGIN IONS\n")
-                f.write(f"TITLE={raw}.{ms2_idx+1}.{ms2_idx+1}.{charge}.{i}.dta\n")
+                f.write(f"TITLE={raw}.{ms2_idx}.{ms2_idx}.{charge}.{i}.dta\n")
+                f.write(f"SCAN={ms2_idx}\n")
                 f.write(f"APSCAN={scan}\n")
                 f.write(f"CHARGE={charge}+\n")
                 f.write(f"RTINSECONDS={rt_list[ms2_idx]*60:.3f}\n")

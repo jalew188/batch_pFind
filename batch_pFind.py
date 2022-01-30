@@ -46,7 +46,7 @@ thermo_ppm = args.thermo_ppm
 bruker_ppm = args.bruker_ppm
 
 if args.reduce_mods:
-    used_mod = os.path.abspath('./reduced_mod.ini')
+    used_mod = os.path.join(pfind_bin_folder,'./reduced_mod.ini')
 else:
     used_mod = os.path.join(pfind_bin_folder,'modification.ini')
 
@@ -159,10 +159,12 @@ def run_pFind(pfind_cfg, raw_file):
         if raw_file.lower().endswith('.raw'):
             os.system(f'{pparse_main} -D {raw_file}\n')
         elif raw_file.lower().endswith(".d"):
+            print(f"Parsing {raw_file} with alphapept")
             from ap_to_pfind import ap_bruker_to_mgf
             from ap_import_bruker import import_bruker_raw
             import_bruker_raw(raw_file)
             ap_bruker_to_mgf(raw_file[:-2]+'.ms_data.hdf')
+            print(f"Finish parsing {raw_file}")
             
     os.system(f"{pfind_main} {pfind_cfg}\n")
     return raw_file
